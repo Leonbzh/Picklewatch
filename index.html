@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PickleWatch — La Référence Mondiale</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #070809;
+  --s1: #0d1014;
+  --s2: #131820;
+  --s3: #1a2130;
+  --border: #1e2a3a;
+  --border2: #253040;
+  --lime: #c8f135;
+  --red: #ff3d54;
+  --cyan: #00d4ff;
+  --gold: #ffc840;
+  --silver: #a8b8cc;
+  --bronze: #c87832;
+  --text: #e0eaf8;
+  --muted: #4a5f7a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:0.6;}
+
+/* HEADER */
+header{position:fixed;top:0;left:0;right:0;z-index:500;height:60px;background:rgba(7,8,9,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:24px;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:4px;color:var(--lime);display:flex;align-items:center;gap:10px;white-space:nowrap;}
+.logo-ball{width:28px;height:28px;background:var(--lime);border-radius:50%;display:grid;place-items:center;font-size:13px;flex-shrink:0;}
+.logo em{color:var(--text);font-style:normal;}
+nav{display:flex;gap:2px;flex:1;overflow-x:auto;}
+nav::-webkit-scrollbar{display:none;}
+.nav-btn{background:none;border:none;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:8px 14px;cursor:pointer;border-radius:4px;transition:all .2s;white-space:nowrap;}
+.nav-btn:hover{color:var(--text);background:var(--s2);}
+.nav-btn.active{color:var(--lime);background:rgba(200,241,53,.07);border-bottom:2px solid var(--lime);}
+.header-right{display:flex;align-items:center;gap:10px;margin-left:auto;}
+.user-pill{display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--border);padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;transition:border-color .2s;}
+.user-pill:hover{border-color:var(--cyan);}
+.user-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--lime));display:grid;place-items:center;font-size:11px;font-weight:700;color:#070809;}
+
+/* LAYOUT */
+.app{display:flex;min-height:100vh;padding-top:60px;}
+.sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--border);background:var(--s1);padding:20px 0;position:fixed;top:60px;bottom:0;overflow-y:auto;}
+.content{flex:1;margin-left:220px;padding:28px;min-height:calc(100vh - 60px);}
+.sidebar-section{padding:0 16px;margin-bottom:20px;}
+.sidebar-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:0 8px;margin-bottom:8px;}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--muted);transition:all .2s;margin-bottom:2px;}
+.sidebar-item:hover{background:var(--s2);color:var(--text);}
+.sidebar-item.active{background:rgba(200,241,53,.08);color:var(--lime);border-left:2px solid var(--lime);margin-left:-2px;}
+
+/* TABS */
+.tab{display:none;}
+.tab.active{display:block;animation:fadeUp .3s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.kpi{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:20px;position:relative;overflow:hidden;transition:all .2s;}
+.kpi:hover{border-color:var(--border2);transform:translateY(-2px);}
+.kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--lime);opacity:.4;}
+.kpi-val{font-family:'Bebas Neue',sans-serif;font-size:44px;line-height:1;color:var(--lime);margin-bottom:4px;}
+.kpi-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+
+/* SECTION HEADER */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.sh-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;display:flex;align-items:center;gap:10px;}
+.sh-title::before{content:'';width:3px;height:18px;background:var(--lime);border-radius:2px;}
+.sh-actions{display:flex;gap:8px;}
+
+/* TABLE */
+.rtable{background:var(--s1);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.rth{display:grid;grid-template-columns:56px 1fr 100px 120px 100px 80px;gap:0;padding:10px 20px;background:var(--s2);border-bottom:1px solid var(--border);}
+.rth-cell{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.rrow{display:grid;grid-template-columns:56px 1fr 100px 120px 100px 80px;gap:0;padding:14px 20px;border-bottom:1px solid var(--border);align-items:center;cursor:pointer;transition:background .15s;}
+.rrow:hover{background:var(--s2);}
+.rrow:last-child{border-bottom:none;}
+.rank-num{font-family:'Bebas Neue',sans-serif;font-size:22px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;}
+.r1{background:rgba(255,200,64,.1);color:var(--gold);border:1px solid rgba(255,200,64,.4);}
+.r2{background:rgba(168,184,204,.08);color:var(--silver);border:1px solid rgba(168,184,204,.3);}
+.r3{background:rgba(200,120,50,.1);color:var(--bronze);border:1px solid rgba(200,120,50,.35);}
+.rn{background:var(--s2);color:var(--muted);border:1px solid var(--border);font-size:14px;}
+.pinfo{display:flex;align-items:center;gap:12px;}
+.pav{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:13px;flex-shrink:0;}
+.pname{font-size:14px;font-weight:600;}
+.pmeta{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.3px;}
+.b-red{background:rgba(255,61,84,.12);color:var(--red);border:1px solid rgba(255,61,84,.25);}
+.b-orange{background:rgba(255,123,61,.12);color:#ff7b3d;border:1px solid rgba(255,123,61,.25);}
+.b-gold{background:rgba(255,200,64,.1);color:var(--gold);border:1px solid rgba(255,200,64,.25);}
+.b-lime{background:rgba(200,241,53,.08);color:var(--lime);border:1px solid rgba(200,241,53,.2);}
+.b-cyan{background:rgba(0,212,255,.08);color:var(--cyan);border:1px solid rgba(0,212,255,.2);}
+.b-muted{background:var(--s2);color:var(--muted);border:1px solid var(--border);}
+
+/* BUTTONS */
+.btn-sm{background:none;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;transition:all .2s;}
+.btn-sm:hover{border-color:var(--cyan);color:var(--cyan);}
+.btn-primary{background:var(--lime);color:#070809;border:none;padding:12px 28px;border-radius:6px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px;}
+.btn-primary:hover{background:#b8e020;transform:translateY(-1px);box-shadow:0 8px 24px rgba(200,241,53,.25);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+/* INCIDENTS */
+.igrid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.icard{background:var(--s1);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:all .2s;}
+.icard:hover{border-color:rgba(200,241,53,.2);transform:translateY(-2px);}
+.icard-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
+.icard-body{padding:14px 18px;}
+.icard-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.icard-desc{font-size:13px;line-height:1.7;color:var(--text);margin-bottom:12px;}
+.vid-thumb{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:12px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s;text-decoration:none;}
+.vid-thumb:hover{background:rgba(0,212,255,.05);border-color:rgba(0,212,255,.25);}
+.play-icon{width:32px;height:32px;background:var(--cyan);border-radius:50%;display:grid;place-items:center;color:#070809;font-size:11px;flex-shrink:0;}
+.vid-info{flex:1;}
+.vid-title{font-size:12px;font-weight:600;margin-bottom:2px;color:var(--text);}
+.vid-sub{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);}
+.vote-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11px;color:var(--muted);}
+.vote-btn{background:var(--s2);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;transition:all .2s;}
+.vote-btn:hover{border-color:var(--lime);color:var(--lime);}
+.vote-btn.voted{background:rgba(200,241,53,.1);border-color:var(--lime);color:var(--lime);}
+
+/* FORM */
+.fcard{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:24px;}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+.fg{display:flex;flex-direction:column;gap:7px;}
+.fg.full{grid-column:1/-1;}
+label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+input,select,textarea{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:6px;font-family:'Syne',sans-serif;font-size:13px;outline:none;transition:border-color .2s;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--lime);}
+textarea{resize:vertical;min-height:90px;}
+select option{background:var(--s2);}
+.upload-zone{border:2px dashed var(--border);border-radius:8px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;background:var(--s2);}
+.upload-zone:hover{border-color:var(--lime);background:rgba(200,241,53,.03);}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:28px;max-width:600px;width:92%;max-height:88vh;overflow-y:auto;position:relative;}
+.mclose{position:absolute;top:18px;right:18px;background:var(--s2);border:1px solid var(--border);color:var(--muted);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;display:grid;place-items:center;transition:all .2s;}
+.mclose:hover{color:var(--red);border-color:var(--red);}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;margin-bottom:20px;padding-right:32px;}
+.auth-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:24px;}
+.auth-tab{flex:1;text-align:center;padding:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;color:var(--muted);transition:all .2s;border-bottom:2px solid transparent;}
+.auth-tab.active{color:var(--lime);border-bottom-color:var(--lime);}
+.auth-form{display:flex;flex-direction:column;gap:14px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--s1);border:1px solid var(--lime);border-radius:8px;padding:14px 20px;font-size:13px;z-index:2000;transform:translateY(80px);opacity:0;transition:all .3s;max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast-title{font-weight:700;color:var(--lime);margin-bottom:3px;}
+.toast.err{border-color:var(--red);}
+.toast.err .toast-title{color:var(--red);}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;gap:12px;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:12px;}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--lime);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* SEVERITY BARS */
+.sev-wrap{display:flex;flex-direction:column;gap:4px;}
+.sev-bar-bg{height:5px;background:var(--s3);border-radius:3px;width:90px;}
+.sev-bar{height:100%;border-radius:3px;}
+.sev-crit{background:var(--red);}
+.sev-high{background:#ff7b3d;}
+.sev-med{background:var(--gold);}
+.sev-low{background:var(--lime);}
+
+/* PROFILE CARD */
+.profile-header{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:28px;margin-bottom:20px;display:flex;gap:24px;align-items:flex-start;}
+.profile-av{width:80px;height:80px;border-radius:50%;display:grid;place-items:center;font-size:28px;font-weight:700;flex-shrink:0;border:3px solid;}
+.profile-kpi{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:14px;}
+.pkpi{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:12px;text-align:center;}
+.pkpi-val{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--red);}
+.pkpi-val.ok{color:var(--lime);}
+.pkpi-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);}
+
+/* TIMELINE */
+.tl{position:relative;padding-left:20px;}
+.tl::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:1px;background:var(--border);}
+.tli{position:relative;padding-bottom:20px;padding-left:18px;}
+.tli::before{content:'';position:absolute;left:-14px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--red);border:2px solid var(--bg);}
+.tli-date{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:3px;}
+.tli-ev{font-size:13px;color:var(--text);margin-bottom:5px;}
+
+/* BADGES GRID */
+.badges-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+.badge-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;position:relative;overflow:hidden;transition:all .2s;}
+.badge-card:hover{transform:translateY(-3px);}
+.badge-card.locked{opacity:.5;}
+.badge-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.badge-bronze::before{background:var(--bronze);}
+.badge-silver::before{background:var(--silver);}
+.badge-gold::before{background:var(--gold);}
+.badge-platinum::before{background:linear-gradient(90deg,var(--cyan),var(--lime));}
+.badge-legendary::before{background:linear-gradient(90deg,#ff6b35,#ff3d54,#c800ff);}
+.badge-supreme::before{background:linear-gradient(90deg,var(--gold),var(--lime),var(--cyan));}
+.badge-emoji{font-size:44px;margin-bottom:10px;display:block;}
+.badge-name{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;margin-bottom:4px;}
+.badge-req{font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5;}
+.badge-prog-bg{height:4px;background:var(--s3);border-radius:2px;overflow:hidden;}
+.badge-prog-fill{height:100%;border-radius:2px;transition:width .5s;}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-icon{font-size:48px;margin-bottom:16px;}
+.empty-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:8px;color:var(--text);}
+.empty-sub{font-size:13px;line-height:1.6;}
+
+/* REP BAR */
+.rep-bar-bg{height:8px;background:var(--s3);border-radius:4px;overflow:hidden;margin:6px 0;}
+.rep-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--red),#ff7b3d,var(--gold));}
+
+@media(max-width:900px){
+  .sidebar{display:none;}
+  .content{margin-left:0;}
+  .kpi-row{grid-template-columns:repeat(2,1fr);}
+  .igrid{grid-template-columns:1fr;}
+  .fgrid{grid-template-columns:1fr;}
+  .badges-grid{grid-template-columns:1fr 1fr;}
+  .rth,.rrow{grid-template-columns:50px 1fr 80px 80px;}
+  .rth > *:nth-child(5),.rrow > *:nth-child(5),
+  .rth > *:nth-child(6),.rrow > *:nth-child(6){display:none;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="logo-ball">🥒</div>PICKLE<em>WATCH</em></div>
+  <nav>
+    <button class="nav-btn active" onclick="goTab('dashboard',this)">📊 Dashboard</button>
+    <button class="nav-btn" onclick="goTab('classement',this)">🏆 Classement</button>
+    <button class="nav-btn" onclick="goTab('incidents',this)">⚡ Incidents</button>
+    <button class="nav-btn" onclick="goTab('signaler',this)">➕ Signaler</button>
+    <button class="nav-btn" onclick="goTab('joueurs',this)">👤 Joueurs</button>
+    <button class="nav-btn" onclick="goTab('communaute',this)">🎖️ Communauté</button>
+  </nav>
+  <div class="header-right">
+    <div class="user-pill" onclick="openAuth()" id="user-pill">
+      <div class="user-av" id="user-av">?</div>
+      <span id="user-name">Se connecter</span>
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Navigation</div>
+      <div class="sidebar-item active" onclick="goTab('dashboard',null);setSide(this)">📊 Dashboard</div>
+      <div class="sidebar-item" onclick="goTab('classement',null);setSide(this)">🏆 Classement mondial</div>
+      <div class="sidebar-item" onclick="goTab('incidents',null);setSide(this)">⚡ Incidents</div>
+      <div class="sidebar-item" onclick="goTab('signaler',null);setSide(this)">➕ Signaler</div>
+      <div class="sidebar-item" onclick="goTab('joueurs',null);setSide(this)">👤 Joueurs</div>
+      <div class="sidebar-item" onclick="goTab('communaute',null);setSide(this)">🎖️ Communauté</div>
+    </div>
+    <div class="sidebar-section" id="my-profile-sidebar" style="display:none;">
+      <div class="sidebar-label">Mon Profil</div>
+      <div style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div id="sb-av" style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--lime));display:grid;place-items:center;font-size:11px;font-weight:700;color:#070809;">?</div>
+          <div>
+            <div id="sb-name" style="font-size:13px;font-weight:600;">—</div>
+            <div id="sb-level" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);">Débutant</div>
+          </div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:3px;">RÉPUTATION</div>
+        <div class="rep-bar-bg"><div class="rep-bar-fill" id="sb-rep-bar" style="width:0%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);"><span id="sb-pts">0 pts</span><span id="sb-next">→ Observateur</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <!-- DASHBOARD -->
+    <div id="tab-dashboard" class="tab active">
+      <div style="margin-bottom:24px;">
+        <h1 style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;">Dashboard <span style="color:var(--lime);">PickleWatch</span></h1>
+        <p style="font-size:13px;color:var(--muted);margin-top:4px;">La référence mondiale pour l'intégrité du pickleball compétitif</p>
+      </div>
+      <div class="kpi-row" id="dashboard-kpis">
+        <div class="kpi"><div class="kpi-val" id="kpi-players">—</div><div class="kpi-label">Joueurs Suivis</div></div>
+        <div class="kpi"><div class="kpi-val" style="color:var(--red);" id="kpi-incidents">—</div><div class="kpi-label">Incidents Total</div></div>
+        <div class="kpi"><div class="kpi-val" style="color:var(--cyan);" id="kpi-videos">—</div><div class="kpi-label">Vidéos Prouvées</div></div>
+        <div class="kpi"><div class="kpi-val" style="color:var(--gold);" id="kpi-members">—</div><div class="kpi-label">Membres Actifs</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div style="background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:20px;">
+          <div class="sh"><div class="sh-title">Derniers Incidents</div><button class="btn-sm" onclick="goTab('incidents',null)">Voir tout</button></div>
+          <div id="recent-incidents-list"><div class="loading"><div class="spinner"></div>Chargement...</div></div>
+        </div>
+        <div style="background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:20px;">
+          <div class="sh"><div class="sh-title">Top Contributeurs</div><button class="btn-sm" onclick="goTab('communaute',null)">Voir tout</button></div>
+          <div id="top-contributors-list"><div class="loading"><div class="spinner"></div>Chargement...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLASSEMENT -->
+    <div id="tab-classement" class="tab">
+      <div class="sh">
+        <div class="sh-title">Classement Mondial</div>
+        <div class="sh-actions">
+          <select id="filter-severity" onchange="loadClassement()" style="font-size:12px;padding:7px 12px;">
+            <option value="">Toutes gravités</option>
+            <option value="critical">Critique</option>
+            <option value="high">Élevée</option>
+          </select>
+        </div>
+      </div>
+      <div class="rtable">
+        <div class="rth">
+          <div class="rth-cell">Rang</div>
+          <div class="rth-cell">Joueur</div>
+          <div class="rth-cell">Incidents</div>
+          <div class="rth-cell">Gravité</div>
+          <div class="rth-cell">Statut</div>
+          <div class="rth-cell"></div>
+        </div>
+        <div id="ranking-body"><div class="loading"><div class="spinner"></div>Chargement...</div></div>
+      </div>
+    </div>
+
+    <!-- INCIDENTS -->
+    <div id="tab-incidents" class="tab">
+      <div class="sh">
+        <div class="sh-title">Incidents Signalés</div>
+        <div class="sh-actions">
+          <select id="filter-type" onchange="loadIncidents()" style="font-size:12px;padding:7px 12px;">
+            <option value="">Tous types</option>
+            <option value="IN_declared_OUT">IN → OUT</option>
+            <option value="OUT_declared_IN">OUT → IN</option>
+            <option value="kitchen_foot">Pied cuisine</option>
+            <option value="service_fault">Fault service</option>
+          </select>
+          <select id="filter-status" onchange="loadIncidents()" style="font-size:12px;padding:7px 12px;">
+            <option value="">Tous statuts</option>
+            <option value="validated">Validés</option>
+            <option value="pending">En attente</option>
+          </select>
+        </div>
+      </div>
+      <div class="igrid" id="incidents-grid"><div class="loading"><div class="spinner"></div>Chargement...</div></div>
+    </div>
+
+    <!-- SIGNALER -->
+    <div id="tab-signaler" class="tab">
+      <div class="sh"><div class="sh-title">Signaler un Incident</div></div>
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;">
+        <div class="fcard">
+          <div class="fgrid">
+            <div class="fg">
+              <label>Joueur existant</label>
+              <select id="f-player-select" onchange="playerSelectChange()">
+                <option value="">— Sélectionner un joueur —</option>
+                <option value="new">+ Ajouter un nouveau joueur</option>
+              </select>
+            </div>
+            <div class="fg" id="f-new-player-wrap" style="display:none;">
+              <label>Nom du nouveau joueur *</label>
+              <input type="text" id="f-new-player" placeholder="Prénom Nom">
+            </div>
+            <div class="fg">
+              <label>Tournoi / Compétition *</label>
+              <input type="text" id="f-tournament" placeholder="Ex: PPA Tour Finals 2025">
+            </div>
+            <div class="fg">
+              <label>Date de l'incident *</label>
+              <input type="date" id="f-date">
+            </div>
+            <div class="fg">
+              <label>Type d'incident *</label>
+              <select id="f-type">
+                <option value="">— Sélectionner —</option>
+                <option value="IN_declared_OUT">Balle IN déclarée OUT</option>
+                <option value="OUT_declared_IN">Balle OUT déclarée IN</option>
+                <option value="kitchen_foot">Pied dans la cuisine</option>
+                <option value="service_fault">Fault de service</option>
+                <option value="double_bounce">Double rebond</option>
+                <option value="net_touch">Toucher le filet</option>
+                <option value="other">Autre</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>Gravité estimée *</label>
+              <select id="f-severity">
+                <option value="low">Faible — doute possible</option>
+                <option value="medium">Modérée — assez clair</option>
+                <option value="high">Élevée — délibéré probable</option>
+                <option value="critical">Critique — preuve confirmée</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>Score au moment de l'incident</label>
+              <input type="text" id="f-score" placeholder="Ex: Set 2 — 9-10">
+            </div>
+            <div class="fg">
+              <label>Adversaire concerné</label>
+              <input type="text" id="f-opponent" placeholder="Optionnel">
+            </div>
+            <div class="fg full">
+              <label>Description détaillée *</label>
+              <textarea id="f-desc" placeholder="Décrivez précisément : quelle décision, quel impact, témoins présents..."></textarea>
+            </div>
+            <div class="fg">
+              <label>Lien vidéo (YouTube, etc.)</label>
+              <input type="url" id="f-video-url" placeholder="https://youtube.com/watch?v=...">
+            </div>
+            <div class="fg">
+              <label>Timecode</label>
+              <input type="text" id="f-timecode" placeholder="Ex: 1:23">
+            </div>
+          </div>
+          <div id="submit-auth-warning" style="display:none;background:rgba(255,61,84,.08);border:1px solid rgba(255,61,84,.2);border-radius:6px;padding:12px;font-size:13px;color:var(--red);margin-bottom:16px;">
+            ⚠️ Vous devez être connecté pour soumettre un incident. <span style="cursor:pointer;text-decoration:underline;" onclick="openAuth()">Se connecter →</span>
+          </div>
+          <button class="btn-primary" id="submit-btn" onclick="submitIncident()">➕ Soumettre l'incident</button>
+        </div>
+        <div>
+          <div style="background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:18px;margin-bottom:14px;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:var(--lime);margin-bottom:10px;">📋 Règles</div>
+            <div style="font-size:12px;line-height:1.9;color:var(--text);">✅ Faits objectifs uniquement<br>✅ Vidéo = +50 pts de réputation<br>✅ 3 confirmations pour publier<br>⚠️ Faux signalements = suspension</div>
+          </div>
+          <div style="background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:18px;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1.5px;color:var(--gold);margin-bottom:10px;">🏅 Points gagnés</div>
+            <div style="font-size:12px;color:var(--text);line-height:2;">
+              Incident validé : <span style="color:var(--lime);">+10 pts</span><br>
+              Avec vidéo : <span style="color:var(--lime);">+50 pts</span><br>
+              Critique prouvé : <span style="color:var(--lime);">+100 pts</span><br>
+              Confirmation : <span style="color:var(--lime);">+5 pts</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JOUEURS -->
+    <div id="tab-joueurs" class="tab">
+      <div class="sh">
+        <div class="sh-title">Base de Données Joueurs</div>
+        <div class="sh-actions">
+          <input type="text" id="player-search" placeholder="🔍  Rechercher..." style="padding:8px 14px;font-size:13px;width:220px;" oninput="searchPlayers()">
+        </div>
+      </div>
+      <div id="players-list"><div class="loading"><div class="spinner"></div>Chargement...</div></div>
+    </div>
+
+    <!-- COMMUNAUTÉ -->
+    <div id="tab-communaute" class="tab">
+      <div class="sh"><div class="sh-title">Badges & Communauté</div></div>
+      <div id="my-badge-profile" style="display:none;background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:24px;"></div>
+      <div class="sh"><div class="sh-title">Tous les Badges</div></div>
+      <div class="badges-grid" id="badges-grid"><div class="loading"><div class="spinner"></div>Chargement...</div></div>
+      <div class="sh" style="margin-top:24px;"><div class="sh-title">Top Contributeurs</div></div>
+      <div id="contributors-full-list"><div class="loading"><div class="spinner"></div>Chargement...</div></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="overlay" id="auth-modal">
+  <div class="modal" style="max-width:440px;">
+    <button class="mclose" onclick="closeModal('auth-modal')">✕</button>
+    <div class="modal-title">🔐 Connexion / Inscription</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="authSwitch(this,'login')">Connexion</div>
+      <div class="auth-tab" onclick="authSwitch(this,'signup')">Créer un compte</div>
+    </div>
+    <div id="auth-login" class="auth-form">
+      <div class="fg"><label>Email</label><input type="email" id="login-email" placeholder="votre@email.com"></div>
+      <div class="fg"><label>Mot de passe</label><input type="password" id="login-password" placeholder="••••••••"></div>
+      <div id="login-error" style="color:var(--red);font-size:12px;display:none;"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;" onclick="doLogin()">Se connecter</button>
+    </div>
+    <div id="auth-signup" class="auth-form" style="display:none;">
+      <div class="fg"><label>Nom complet</label><input type="text" id="signup-name" placeholder="Prénom Nom"></div>
+      <div class="fg"><label>Pays</label><input type="text" id="signup-country" placeholder="France"></div>
+      <div class="fg"><label>Email</label><input type="email" id="signup-email" placeholder="votre@email.com"></div>
+      <div class="fg"><label>Mot de passe</label><input type="password" id="signup-password" placeholder="Min. 8 caractères"></div>
+      <div id="signup-error" style="color:var(--red);font-size:12px;display:none;"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;" onclick="doSignup()">Créer mon compte</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYER MODAL -->
+<div class="overlay" id="player-modal">
+  <div class="modal" style="max-width:680px;">
+    <button class="mclose" onclick="closeModal('player-modal')">✕</button>
+    <div class="modal-title" id="pm-title"></div>
+    <div id="pm-body"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-title" id="toast-title"></div>
+  <div id="toast-msg"></div>
+</div>
+
+<script>
+// ============================================================
+// SUPABASE INIT
+// ============================================================
+const SUPABASE_URL = 'https://dczuxidectduaageomwc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_4Lr-qm5dc_1Z7G5SQjGhuQ_k547wmj-';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let currentProfile = null;
+
+// ============================================================
+// AUTH
+// ============================================================
+async function initAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) await setUser(session.user);
+  
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (session) await setUser(session.user);
+    else clearUser();
+  });
+}
+
+async function setUser(user) {
+  currentUser = user;
+  const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  currentProfile = profile;
+  
+  const initials = (profile?.full_name || user.email || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('user-av').textContent = initials;
+  document.getElementById('user-name').textContent = profile?.full_name || user.email.split('@')[0];
+  document.getElementById('submit-auth-warning').style.display = 'none';
+  
+  // Sidebar profile
+  document.getElementById('my-profile-sidebar').style.display = 'block';
+  document.getElementById('sb-av').textContent = initials;
+  document.getElementById('sb-name').textContent = profile?.full_name || '—';
+  document.getElementById('sb-level').textContent = profile?.level || 'Débutant';
+  document.getElementById('sb-pts').textContent = (profile?.reputation_points || 0) + ' pts';
+  const pct = Math.min(100, ((profile?.reputation_points || 0) / 2500) * 100);
+  document.getElementById('sb-rep-bar').style.width = pct + '%';
+  
+  loadMyBadgeProfile();
+}
+
+function clearUser() {
+  currentUser = null;
+  currentProfile = null;
+  document.getElementById('user-av').textContent = '?';
+  document.getElementById('user-name').textContent = 'Se connecter';
+  document.getElementById('my-profile-sidebar').style.display = 'none';
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value;
+  const pw = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  
+  const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+  if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+  closeModal('auth-modal');
+  showToast('✅ Connexion réussie !', 'Bienvenue sur PickleWatch');
+}
+
+async function doSignup() {
+  const name = document.getElementById('signup-name').value;
+  const country = document.getElementById('signup-country').value;
+  const email = document.getElementById('signup-email').value;
+  const pw = document.getElementById('signup-password').value;
+  const errEl = document.getElementById('signup-error');
+  errEl.style.display = 'none';
+  
+  const { error } = await sb.auth.signUp({
+    email, password: pw,
+    options: { data: { full_name: name, country } }
+  });
+  if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+  closeModal('auth-modal');
+  showToast('🎉 Compte créé !', 'Vérifiez votre email pour confirmer votre compte. Badge 🔍 Premier Témoin débloqué !');
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  showToast('👋 Déconnecté', '');
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function loadDashboard() {
+  const [{ count: players }, { count: incidents }, { count: videos }, { count: members }] = await Promise.all([
+    sb.from('players').select('*', { count: 'exact', head: true }),
+    sb.from('incidents').select('*', { count: 'exact', head: true }).eq('status', 'validated'),
+    sb.from('incidents').select('*', { count: 'exact', head: true }).eq('has_video', true).eq('status', 'validated'),
+    sb.from('profiles').select('*', { count: 'exact', head: true })
+  ]);
+  
+  document.getElementById('kpi-players').textContent = players || 0;
+  document.getElementById('kpi-incidents').textContent = incidents || 0;
+  document.getElementById('kpi-videos').textContent = videos || 0;
+  document.getElementById('kpi-members').textContent = members || 0;
+  
+  // Recent incidents
+  const { data: recent } = await sb.from('incidents_feed').select('*').limit(4).order('created_at', { ascending: false });
+  const ril = document.getElementById('recent-incidents-list');
+  if (!recent || recent.length === 0) {
+    ril.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">Aucun incident</div><div class="empty-sub">Soyez le premier à signaler</div></div>`;
+  } else {
+    ril.innerHTML = recent.map(i => `
+      <div style="display:flex;gap:12px;align-items:center;padding:10px;background:var(--s2);border-radius:6px;margin-bottom:8px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:${sevColor(i.severity)};flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <div style="font-size:13px;">${i.player_name} — <span style="color:var(--muted);">${typeLabel(i.incident_type)}</span></div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);">${i.tournament} · ${formatDate(i.incident_date)}</div>
+        </div>
+        <span class="badge ${sevBadge(i.severity)}">${sevLabel(i.severity)}</span>
+      </div>
+    `).join('');
+  }
+  
+  // Top contributors
+  const { data: contribs } = await sb.from('contributor_ranking').select('*').limit(3);
+  const tcl = document.getElementById('top-contributors-list');
+  if (!contribs || contribs.length === 0) {
+    tcl.innerHTML = `<div class="empty"><div class="empty-icon">🏅</div><div class="empty-title">Aucun contributeur</div><div class="empty-sub">Inscrivez-vous et commencez à contribuer</div></div>`;
+  } else {
+    const medals = ['🥇','🥈','🥉'];
+    tcl.innerHTML = contribs.map((c,i) => `
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 10px;background:var(--s2);border-radius:6px;margin-bottom:8px;">
+        <span style="font-size:20px;">${medals[i]||'🏅'}</span>
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--lime));display:grid;place-items:center;font-size:11px;font-weight:700;color:#070809;">${initials(c.full_name||c.username)}</div>
+        <div style="flex:1;"><div style="font-size:13px;">${c.full_name||c.username}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);">${c.videos_validated} vidéos · ${c.reputation_points} pts</div></div>
+      </div>
+    `).join('');
+  }
+}
+
+// ============================================================
+// CLASSEMENT
+// ============================================================
+async function loadClassement() {
+  const body = document.getElementById('ranking-body');
+  body.innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
+  
+  const { data } = await sb.from('player_ranking').select('*').limit(50);
+  
+  if (!data || data.length === 0) {
+    body.innerHTML = `<div class="empty" style="grid-column:1/-1;padding:40px;"><div class="empty-icon">🏆</div><div class="empty-title">Aucun joueur</div><div class="empty-sub">Les joueurs apparaîtront ici dès les premiers incidents signalés</div></div>`;
+    return;
+  }
+  
+  const rankClass = r => r === 1 ? 'r1' : r === 2 ? 'r2' : r === 3 ? 'r3' : 'rn';
+  
+  body.innerHTML = data.map(p => `
+    <div class="rrow" onclick="openPlayerModal('${p.id}')">
+      <div><div class="rank-num ${rankClass(p.rank)}">${p.rank}</div></div>
+      <div class="pinfo">
+        <div class="pav" style="background:rgba(255,61,84,.1);color:var(--red);">${initials(p.full_name)}</div>
+        <div>
+          <div class="pname">${p.full_name}</div>
+          <div class="pmeta">${p.country || '—'} · ${p.level || '—'}</div>
+        </div>
+      </div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:${sevColor(p.total_incidents > 15 ? 'critical' : p.total_incidents > 8 ? 'high' : 'medium')}">${p.total_incidents}</div>
+      <div class="sev-wrap">
+        <div class="sev-bar-bg"><div class="sev-bar sev-${p.critical_incidents > 5 ? 'crit' : 'high'}" style="width:${Math.min(100,p.integrity_score ? (100-p.integrity_score) : 50)}%"></div></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);">Intégrité: ${p.integrity_score}/100</div>
+      </div>
+      <div><span class="badge ${statusBadge(p.status)}">${p.status}</span></div>
+      <div><button class="btn-sm">Profil →</button></div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// INCIDENTS
+// ============================================================
+async function loadIncidents() {
+  const grid = document.getElementById('incidents-grid');
+  grid.innerHTML = '<div class="loading" style="grid-column:1/-1"><div class="spinner"></div>Chargement...</div>';
+  
+  let q = sb.from('incidents_feed').select('*').order('created_at', { ascending: false }).limit(20);
+  const type = document.getElementById('filter-type')?.value;
+  const status = document.getElementById('filter-status')?.value;
+  if (type) q = q.eq('incident_type', type);
+  if (status) q = q.eq('status', status);
+  
+  const { data } = await q;
+  
+  if (!data || data.length === 0) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📭</div><div class="empty-title">Aucun incident</div><div class="empty-sub">Aucun incident ne correspond à vos filtres</div></div>`;
+    return;
+  }
+  
+  grid.innerHTML = data.map(i => `
+    <div class="icard">
+      <div class="icard-head">
+        <div>
+          <div class="pname">${i.player_name}</div>
+          <div class="pmeta" style="margin-top:3px;">🏆 ${i.tournament} ${i.tournament_location ? '— '+i.tournament_location : ''}</div>
+        </div>
+        <span class="badge ${sevBadge(i.severity)}">${sevLabel(i.severity)}</span>
+      </div>
+      <div class="icard-body">
+        <div class="icard-meta">
+          <span class="badge b-muted">${typeLabel(i.incident_type)}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);">${formatDate(i.incident_date)} ${i.score_at_incident ? '· '+i.score_at_incident : ''}</span>
+        </div>
+        <div class="icard-desc">${i.description}</div>
+        ${i.video_url ? `
+          <a class="vid-thumb" href="${i.video_url}" target="_blank" rel="noopener">
+            <div class="play-icon">▶</div>
+            <div class="vid-info">
+              <div class="vid-title">Voir la preuve vidéo</div>
+              <div class="vid-sub">${i.video_url.includes('youtube') ? 'YouTube' : 'Lien vidéo'} ${i.video_timecode ? '· à '+i.video_timecode : ''}</div>
+            </div>
+          </a>
+        ` : `
+          <div class="vid-thumb" style="opacity:.4;cursor:default;">
+            <div class="play-icon" style="background:var(--muted);">📵</div>
+            <div class="vid-info"><div class="vid-title">Aucune vidéo disponible</div><div class="vid-sub">Témoignage écrit uniquement</div></div>
+          </div>
+        `}
+        <div class="vote-row">
+          <button class="vote-btn ${currentUser ? '' : ''}" onclick="castVote('${i.id}','confirm',this)">👍 Confirmer (${i.confirmations_count || 0})</button>
+          <button class="vote-btn" onclick="castVote('${i.id}','dispute',this)">👎 Contester (${i.disputes_count || 0})</button>
+          <span style="margin-left:auto;font-size:10px;">${i.status === 'validated' ? '✅ Validé' : i.status === 'pending' ? '⏳ En attente' : i.status}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function castVote(incidentId, type, btn) {
+  if (!currentUser) { openAuth(); return; }
+  const { error } = await sb.from('incident_votes').insert({ incident_id: incidentId, voter_id: currentUser.id, vote_type: type });
+  if (error) { showToast('⚠️ Erreur', 'Vous avez déjà voté sur cet incident', true); return; }
+  btn.classList.toggle('voted');
+  showToast('✅ Vote enregistré', '+5 pts de réputation');
+}
+
+// ============================================================
+// SIGNALER
+// ============================================================
+async function loadPlayersSelect() {
+  const { data } = await sb.from('players').select('id, full_name, country').order('full_name');
+  const sel = document.getElementById('f-player-select');
+  if (data) {
+    const opts = data.map(p => `<option value="${p.id}">${p.full_name} ${p.country ? '('+p.country+')' : ''}</option>`).join('');
+    sel.innerHTML = '<option value="">— Sélectionner un joueur —</option>' + opts + '<option value="new">+ Ajouter un nouveau joueur</option>';
+  }
+}
+
+function playerSelectChange() {
+  const val = document.getElementById('f-player-select').value;
+  document.getElementById('f-new-player-wrap').style.display = val === 'new' ? 'flex' : 'none';
+}
+
+async function submitIncident() {
+  if (!currentUser) { document.getElementById('submit-auth-warning').style.display = 'block'; return; }
+  
+  const playerSelect = document.getElementById('f-player-select').value;
+  const tournament = document.getElementById('f-tournament').value.trim();
+  const date = document.getElementById('f-date').value;
+  const type = document.getElementById('f-type').value;
+  const severity = document.getElementById('f-severity').value;
+  const desc = document.getElementById('f-desc').value.trim();
+  
+  if (!playerSelect || !tournament || !date || !type || !desc) {
+    showToast('⚠️ Champs manquants', 'Remplissez tous les champs obligatoires', true);
+    return;
+  }
+  
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Envoi en cours...';
+  
+  let playerId = playerSelect;
+  
+  // Créer nouveau joueur si nécessaire
+  if (playerSelect === 'new') {
+    const newName = document.getElementById('f-new-player').value.trim();
+    if (!newName) { showToast('⚠️ Nom manquant', 'Entrez le nom du joueur', true); btn.disabled = false; btn.innerHTML = '➕ Soumettre l\'incident'; return; }
+    const { data: newPlayer, error } = await sb.from('players').insert({ full_name: newName }).select().single();
+    if (error) { showToast('❌ Erreur', error.message, true); btn.disabled = false; btn.innerHTML = '➕ Soumettre l\'incident'; return; }
+    playerId = newPlayer.id;
+  }
+  
+  const videoUrl = document.getElementById('f-video-url').value.trim();
+  
+  const { error } = await sb.from('incidents').insert({
+    player_id: playerId,
+    submitted_by: currentUser.id,
+    tournament,
+    incident_date: date,
+    incident_type: type,
+    severity,
+    score_at_incident: document.getElementById('f-score').value,
+    opponent_name: document.getElementById('f-opponent').value,
+    description: desc,
+    video_url: videoUrl || null,
+    video_timecode: document.getElementById('f-timecode').value,
+    has_video: !!videoUrl,
+    status: 'pending'
+  });
+  
+  btn.disabled = false;
+  btn.innerHTML = '➕ Soumettre l\'incident';
+  
+  if (error) { showToast('❌ Erreur', error.message, true); return; }
+  
+  showToast('✅ Incident soumis !', 'Votre signalement est en cours de validation. +10 pts de réputation.');
+  // Reset form
+  ['f-tournament','f-date','f-score','f-opponent','f-desc','f-video-url','f-timecode'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('f-type').value = '';
+  loadPlayersSelect();
+}
+
+// ============================================================
+// JOUEURS
+// ============================================================
+async function loadPlayers(search = '') {
+  const list = document.getElementById('players-list');
+  list.innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
+  
+  let q = sb.from('player_ranking').select('*').order('total_incidents', { ascending: false }).limit(30);
+  if (search) q = q.ilike('full_name', `%${search}%`);
+  
+  const { data } = await q;
+  
+  if (!data || data.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">👤</div><div class="empty-title">Aucun joueur</div><div class="empty-sub">Aucun joueur trouvé${search ? ' pour "'+search+'"' : ''}</div></div>`;
+    return;
+  }
+  
+  list.innerHTML = `<div class="rtable"><div class="rth">
+    <div class="rth-cell">Rang</div>
+    <div class="rth-cell">Joueur</div>
+    <div class="rth-cell">Incidents</div>
+    <div class="rth-cell">Gravité</div>
+    <div class="rth-cell">Statut</div>
+    <div class="rth-cell"></div>
+  </div>` + data.map((p,i) => `
+    <div class="rrow" onclick="openPlayerModal('${p.id}')">
+      <div><div class="rank-num ${i<3 ? 'r'+(i+1) : 'rn'}">${i+1}</div></div>
+      <div class="pinfo">
+        <div class="pav" style="background:rgba(255,61,84,.1);color:var(--red);">${initials(p.full_name)}</div>
+        <div><div class="pname">${p.full_name}</div><div class="pmeta">${p.country||'—'} · ${p.level||'—'}</div></div>
+      </div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--red);">${p.total_incidents}</div>
+      <div class="sev-wrap">
+        <div class="sev-bar-bg"><div class="sev-bar sev-crit" style="width:${Math.min(100,(100-(p.integrity_score||100)))}%"></div></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);">Score: ${p.integrity_score||100}/100</div>
+      </div>
+      <div><span class="badge ${statusBadge(p.status)}">${p.status||'Normal'}</span></div>
+      <div><button class="btn-sm">Profil →</button></div>
+    </div>
+  `).join('') + '</div>';
+}
+
+function searchPlayers() {
+  const q = document.getElementById('player-search').value;
+  clearTimeout(window._searchTimer);
+  window._searchTimer = setTimeout(() => loadPlayers(q), 300);
+}
+
+// ============================================================
+// PLAYER MODAL
+// ============================================================
+async function openPlayerModal(playerId) {
+  document.getElementById('player-modal').classList.add('open');
+  document.getElementById('pm-body').innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
+  
+  const { data: p } = await sb.from('players').select('*').eq('id', playerId).single();
+  const { data: incidents } = await sb.from('incidents').select('*').eq('player_id', playerId).eq('status','validated').order('incident_date', { ascending: false }).limit(5);
+  
+  if (!p) { document.getElementById('pm-body').innerHTML = '<p>Joueur introuvable</p>'; return; }
+  
+  document.getElementById('pm-title').textContent = '👤 ' + p.full_name;
+  document.getElementById('pm-body').innerHTML = `
+    <div style="display:flex;gap:16px;align-items:center;margin-bottom:18px;">
+      <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,61,84,.15);color:var(--red);display:grid;place-items:center;font-size:22px;font-weight:700;border:2px solid var(--red);">${initials(p.full_name)}</div>
+      <div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;">${p.full_name}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);">${p.country||'—'} · ${p.level||'—'} · ${p.tours ? p.tours.join(', ') : '—'}</div>
+        <div style="margin-top:8px;"><span class="badge ${statusBadge(p.status)}">${p.status||'Normal'}</span></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;">
+      <div class="pkpi"><div class="pkpi-val">${p.total_incidents||0}</div><div class="pkpi-label">Incidents</div></div>
+      <div class="pkpi"><div class="pkpi-val">${p.videos_confirmed||0}</div><div class="pkpi-label">Vidéos</div></div>
+      <div class="pkpi"><div class="pkpi-val">${p.critical_incidents||0}</div><div class="pkpi-label">Critiques</div></div>
+      <div class="pkpi"><div class="pkpi-val ok">${p.integrity_score||100}</div><div class="pkpi-label">Intégrité/100</div></div>
+    </div>
+    ${incidents && incidents.length > 0 ? `
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;">Derniers incidents</div>
+      <div class="tl">
+        ${incidents.map(i => `
+          <div class="tli">
+            <div class="tli-date">${formatDate(i.incident_date)} — ${i.tournament}</div>
+            <div class="tli-ev">${typeLabel(i.incident_type)}</div>
+            <div style="margin-top:5px;display:flex;gap:6px;">
+              <span class="badge ${sevBadge(i.severity)}">${sevLabel(i.severity)}</span>
+              ${i.has_video ? '<span class="badge b-cyan">🎥 Vidéo</span>' : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    ` : '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Aucun incident validé pour ce joueur</div>'}
+  `;
+}
+
+// ============================================================
+// COMMUNAUTÉ
+// ============================================================
+async function loadBadges() {
+  const { data } = await sb.from('badge_definitions').select('*').order('requirement_value');
+  const grid = document.getElementById('badges-grid');
+  
+  let myBadgeIds = [];
+  if (currentUser) {
+    const { data: myBadges } = await sb.from('member_badges').select('badge_id').eq('profile_id', currentUser.id);
+    myBadgeIds = myBadges ? myBadges.map(b => b.badge_id) : [];
+  }
+  
+  if (!data) { grid.innerHTML = ''; return; }
+  
+  const tierClass = t => `badge-${t}`;
+  
+  grid.innerHTML = data.map(b => {
+    const unlocked = myBadgeIds.includes(b.id);
+    const myProgress = currentProfile ? (currentProfile[b.requirement_type] || 0) : 0;
+    const pct = Math.min(100, (myProgress / b.requirement_value) * 100);
+    return `
+      <div class="badge-card ${tierClass(b.tier)} ${unlocked ? '' : 'locked'}">
+        <span class="badge-emoji">${b.emoji}</span>
+        <div class="badge-name">${b.name}</div>
+        <div class="badge-req">${b.description}</div>
+        <div class="badge-prog-bg">
+          <div class="badge-prog-fill" style="width:${pct}%;background:${b.tier === 'legendary' || b.tier === 'supreme' ? 'linear-gradient(90deg,#ff6b35,#c800ff)' : b.tier === 'gold' ? 'var(--gold)' : b.tier === 'silver' ? 'var(--silver)' : 'var(--bronze)'};"></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:6px;font-family:'IBM Plex Mono',monospace;">
+          ${unlocked ? '✅ Débloqué' : `${myProgress} / ${b.requirement_value}`}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadContributors() {
+  const { data } = await sb.from('contributor_ranking').select('*').limit(20);
+  const list = document.getElementById('contributors-full-list');
+  
+  if (!data || data.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🏅</div><div class="empty-title">Aucun contributeur</div><div class="empty-sub">Soyez le premier à contribuer !</div></div>`;
+    return;
+  }
+  
+  const medals = ['🥇','🥈','🥉'];
+  list.innerHTML = `<div class="rtable">` + data.map((c,i) => `
+    <div class="rrow">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--muted)'};">${medals[i]||i+1}</div>
+      <div class="pinfo">
+        <div class="pav" style="background:linear-gradient(135deg,var(--cyan),var(--lime));color:#070809;">${initials(c.full_name||c.username)}</div>
+        <div><div class="pname">${c.full_name||c.username}</div><div class="pmeta">${c.country||'—'}</div></div>
+      </div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--lime);">${c.videos_validated}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);">${c.reputation_points}</div>
+      <div><span class="badge b-lime">${c.level||'Débutant'}</span></div>
+      <div></div>
+    </div>
+  `).join('') + '</div>';
+}
+
+async function loadMyBadgeProfile() {
+  if (!currentUser || !currentProfile) return;
+  const el = document.getElementById('my-badge-profile');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div style="display:flex;gap:20px;align-items:center;">
+      <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--lime));display:grid;place-items:center;font-size:20px;font-weight:700;color:#070809;border:3px solid var(--lime);">${initials(currentProfile.full_name||currentUser.email)}</div>
+      <div style="flex:1;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;">${currentProfile.full_name||currentUser.email}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);">Niveau: ${currentProfile.level||'Débutant'} · ${currentProfile.videos_validated||0} vidéos validées</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--lime);">${currentProfile.reputation_points||0}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);">POINTS</div>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+const sevColor = s => ({critical:'var(--red)',high:'#ff7b3d',medium:'var(--gold)',low:'var(--lime)'})[s] || 'var(--muted)';
+const sevBadge = s => ({critical:'b-red',high:'b-orange',medium:'b-gold',low:'b-lime'})[s] || 'b-muted';
+const sevLabel = s => ({critical:'🔴 Critique',high:'🟠 Élevée',medium:'🟡 Modérée',low:'🟢 Faible'})[s] || s;
+const typeLabel = t => ({
+  IN_declared_OUT:'Balle IN → OUT',
+  OUT_declared_IN:'Balle OUT → IN',
+  kitchen_foot:'Pied dans cuisine',
+  service_fault:'Fault service',
+  double_bounce:'Double rebond',
+  net_touch:'Toucher filet',
+  other:'Autre'
+})[t] || t;
+const statusBadge = s => ({Watched:'b-red',Warning:'b-orange',Noted:'b-gold',Normal:'b-muted'})[s] || 'b-muted';
+const initials = s => (s||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+const formatDate = d => d ? new Date(d).toLocaleDateString('fr-FR', {day:'numeric',month:'short',year:'numeric'}) : '—';
+
+// ============================================================
+// NAV & UI
+// ============================================================
+function goTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  
+  // Load data on tab switch
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'classement') loadClassement();
+  if (name === 'incidents') loadIncidents();
+  if (name === 'joueurs') loadPlayers();
+  if (name === 'signaler') { loadPlayersSelect(); if (!currentUser) document.getElementById('submit-auth-warning').style.display = 'block'; }
+  if (name === 'communaute') { loadBadges(); loadContributors(); }
+}
+
+function setSide(el) {
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function openAuth() { document.getElementById('auth-modal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+window.addEventListener('click', e => { if (e.target.classList.contains('overlay')) e.target.classList.remove('open'); });
+
+function authSwitch(tab, type) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  document.getElementById('auth-login').style.display = type === 'login' ? 'flex' : 'none';
+  document.getElementById('auth-signup').style.display = type === 'signup' ? 'flex' : 'none';
+}
+
+function showToast(title, msg, isErr) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-title').textContent = title;
+  document.getElementById('toast-msg').textContent = msg;
+  t.className = 'toast' + (isErr ? ' err' : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+initAuth();
+loadDashboard();
+</script>
+</body>
+</html>
